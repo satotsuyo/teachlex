@@ -75,6 +75,10 @@ if word:
             elif "頻度" in result.columns and category != "中学校":
                 st.markdown(f"<p style='font-weight:normal;'>頻度: <b style='font-size:18px;'>{result['頻度'].values[0]}</b></p>", unsafe_allow_html=True)
 
+            # 小学校と中学校にも「語彙レベル」を表示
+            if category in ["小学校", "中学校"] and "語彙レベル" in result.columns:
+                st.markdown(f"<p style='font-weight:normal;'>語彙レベル: <b style='font-size:18px;'>{result['語彙レベル'].values[0]}</b></p>", unsafe_allow_html=True)
+
             # 英語コミュニケーションと論理表現ではARFを「頻度」として表示し、語彙レベルの下に使用教科書数を表示
             if category in ["高等学校英語コミュニケーション", "高等学校論理表現"]:
                 if "ARF" in result.columns:

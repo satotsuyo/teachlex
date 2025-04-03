@@ -52,7 +52,7 @@ st.title("TeachLex Scope")
 st.markdown("""<p style="font-size:16px;">小学校から高等学校の英語の教科書の使用状況をお知らせします。</p>""", unsafe_allow_html=True)
 
 # 3カラムのレイアウト設定
-col1, col2, col3 = st.columns([2, 3, 3])
+col1, col2, col3 = st.columns([2, 4, 4])
 
 with col1:
     st.markdown("### 単語を検索")

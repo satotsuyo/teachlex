@@ -63,7 +63,7 @@ with col2:
         result_j = df_j[df_j["単語"] == lemma_word]
         if not result_j.empty:
             st.subheader("中学校の教科書の使用状況")
-            st.markdown(f"<p style='font-weight:normal;'>頻度: <b style='font-size:18px;'>{result_j['頻度'].values[0]}</b></p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='font-weight:normal;'>頻度: <b style='font-size:18px;'>{int(result_j['頻度'].values[0])}</b></p>", unsafe_allow_html=True)
             st.markdown(f"<p style='font-weight:normal;'>語彙レベル: <b style='font-size:18px;'>{result_j['語彙レベル'].values[0]}</b></p>", unsafe_allow_html=True)
 
             textbooks = ["BS", "HWG", "NH", "NC", "OW", "SS"]

@@ -49,7 +49,7 @@ def load_data(url):
 dataframes = {key: load_data(url) for key, url in CSV_URLS.items()}
 
 st.title("TeachLex Scope")
-st.markdown("""<p style="font-size:16px;">入力された英単語の小学校から高等学校の教科書における使用状況をお知らせします。</p>""", unsafe_allow_html=True)
+st.markdown("""<p style="font-size:16px;">小学校から高等学校の英語の教科書の使用状況をお知らせします。</p>""", unsafe_allow_html=True)
 
 word = st.text_input("単語を入力してください", "")
 
@@ -79,14 +79,19 @@ if word:
             if category in ["小学校", "中学校"] and "語彙レベル" in result.columns:
                 st.markdown(f"<p style='font-weight:normal;'>語彙レベル: <b style='font-size:18px;'>{result['語彙レベル'].values[0]}</b></p>", unsafe_allow_html=True)
 
-            # 英語コミュニケーションと論理表現ではARFを「頻度」として表示し、語彙レベルの下に使用教科書数を表示
+            # 英語コミュニケーションと論理表現ではARFを「頻度」として表示し、語彙レベルの下に使用教科書数を「X/全体」の形式で表示
             if category in ["高等学校英語コミュニケーション", "高等学校論理表現"]:
                 if "ARF" in result.columns:
                     st.markdown(f"<p style='font-weight:normal;'>頻度: <b style='font-size:18px;'>{int(result['ARF'].values[0])}</b></p>", unsafe_allow_html=True)
                 if "語彙レベル" in result.columns:
                     st.markdown(f"<p style='font-weight:normal;'>語彙レベル: <b style='font-size:18px;'>{result['語彙レベル'].values[0]}</b></p>", unsafe_allow_html=True)
                 if "使用教科書数" in result.columns:
-                    st.markdown(f"<p style='font-weight:normal;'>使用教科書数: <b style='font-size:18px;'>{int(result['使用教科書数'].values[0])}</b></p>", unsafe_allow_html=True)
+                    if category == "高等学校英語コミュニケーション":
+                        total_books = 24
+                        st.markdown(f"<p style='font-weight:normal;'>使用教科書数: <b style='font-size:18px;'>{int(result['使用教科書数'].values[0])}/{total_books}種類</b></p>", unsafe_allow_html=True)
+                    elif category == "高等学校論理表現":
+                        total_books = 18
+                        st.markdown(f"<p style='font-weight:normal;'>使用教科書数: <b style='font-size:18px;'>{int(result['使用教科書数'].values[0])}/{total_books}種類</b></p>", unsafe_allow_html=True)
 
             # 小学校・中学校はテーブルを表示
             if category in ["小学校", "中学校"]:

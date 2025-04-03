@@ -3,31 +3,35 @@ import pandas as pd
 import spacy
 
 # SpaCyの英語モデルをロード
-nlp = spacy.load("en_core_web_sm")
+@st.cache_data
+def load_nlp_model():
+    return spacy.load("en_core_web_sm")
 
-# 小学校、中学校、高等学校英語コミュニケーション、高等学校論理表現のCSVファイルのURL
-CSV_URL_E = "http://hirosakieigo.weblike.jp/satoclass/material/webapp/vocabdata_E.csv"
-CSV_URL_J = "http://hirosakieigo.weblike.jp/satoclass/material/webapp/vocabdata_J.csv"
-CSV_URL_HE = "http://hirosakieigo.weblike.jp/satoclass/material/webapp/vocabdata_HE.csv"
-CSV_URL_HL = "http://hirosakieigo.weblike.jp/satoclass/material/webapp/vocabdata_HL.csv"
+nlp = load_nlp_model()
 
+# CSVファイルのURLリスト
+CSV_URLS = {
+    "小学校": "http://hirosakieigo.weblike.jp/satoclass/material/webapp/vocabdata_E.csv",
+    "中学校": "http://hirosakieigo.weblike.jp/satoclass/material/webapp/vocabdata_J.csv",
+    "高等学校英語コミュニケーション": "http://hirosakieigo.weblike.jp/satoclass/material/webapp/vocabdata_HE.csv",
+    "高等学校論理表現": "http://hirosakieigo.weblike.jp/satoclass/material/webapp/vocabdata_HL.csv",
+}
+
+# データをロードする関数
 @st.cache_data
 def load_data(url):
-    return pd.read_csv(url)
+    try:
+        return pd.read_csv(url)
+    except Exception as e:
+        st.error(f"データの読み込みに失敗しました: {url}\nエラー: {str(e)}")
+        return pd.DataFrame()  # 空のDataFrameを返す
 
-df_e = load_data(CSV_URL_E)
-df_j = load_data(CSV_URL_J)
-df_he = load_data(CSV_URL_HE)
-df_hl = load_data(CSV_URL_HL)
+# データのロード
+dataframes = {key: load_data(url) for key, url in CSV_URLS.items()}
 
 st.title("TeachLex Scope")
-st.markdown("""
-<p style="font-size:16px;">
-小学校から高等学校の英語の教科書の使用状況をお知らせします。
-</p>
-""", unsafe_allow_html=True)
+st.markdown("""<p style="font-size:16px;">小学校から高等学校の英語の教科書の使用状況をお知らせします。</p>""", unsafe_allow_html=True)
 
-# レイアウト設定
 col1, col2 = st.columns([1, 2])
 
 with col1:
@@ -37,63 +41,25 @@ with col1:
 # 単語のlemmaを取得する関数
 def get_lemma(input_word):
     doc = nlp(input_word)
-    return doc[0].lemma_  # 最初の単語のlemmaを返す
+    return doc[0].lemma_ if doc else input_word  # 最初の単語のlemmaを返す
 
 with col2:
-    if word:  # テキストボックスに入力があった場合のみ処理を実行
-        lemma_word = get_lemma(word)  # 入力された単語をlemmaに変換
+    if word:
+        lemma_word = get_lemma(word)
         st.write(f"入力された単語: {word} → lemma形式: {lemma_word}")
 
-        # 小学校の教科書の使用状況
-        result_e = df_e[df_e["単語"] == lemma_word]
-        if not result_e.empty:
-            st.subheader("小学校の教科書の使用状況")
-            st.markdown(f"<p style='font-weight:normal;'>頻度: <b style='font-size:18px;'>{result_e['頻度'].values[0]}</b></p>", unsafe_allow_html=True)
-            st.markdown(f"<p style='font-weight:normal;'>語彙レベル: <b style='font-size:18px;'>{result_e['語彙レベル'].values[0]}</b></p>", unsafe_allow_html=True)
-
-            textbooks = ["R2", "BS", "HWG", "NH", "NC", "OW", "SS"]
-            states = ['〇' if result_e[book].values[0] else '×' for book in textbooks]
-
-            data_e = pd.DataFrame([textbooks, states], index=["教科書名", "使用の有無"])
-            st.table(data_e)
-        else:
-            st.warning("入力された単語は小学校のリストに含まれていません。")
-
-        # 中学校の教科書の使用状況
-        result_j = df_j[df_j["単語"] == lemma_word]
-        if not result_j.empty:
-            st.subheader("中学校の教科書の使用状況")
-            st.markdown(f"<p style='font-weight:normal;'>頻度: <b style='font-size:18px;'>{int(result_j['頻度'].values[0])}</b></p>", unsafe_allow_html=True)
-            st.markdown(f"<p style='font-weight:normal;'>語彙レベル: <b style='font-size:18px;'>{result_j['語彙レベル'].values[0]}</b></p>", unsafe_allow_html=True)
-
-            textbooks = ["BS", "HWG", "NH", "NC", "OW", "SS"]
-            states = ['〇' if result_j[book].values[0] else '×' for book in textbooks]
-
-            data_j = pd.DataFrame([textbooks, states], index=["教科書名", "使用の有無"])
-            st.table(data_j)
-        else:
-            st.warning("入力された単語は中学校のリストに含まれていません。")
-
-        # 高等学校英語コミュニケーション
-        result_he = df_he[df_he["単語"] == lemma_word]
-        if not result_he.empty:
-            st.markdown("---")
-            st.subheader("高等学校英語コミュニケーションの使用状況")
-            st.markdown(f"<p style='font-weight:normal;'>語彙レベル: <b style='font-size:18px;'>{result_he['語彙レベル'].values[0]}</b></p>", unsafe_allow_html=True)
-            st.markdown(f"<p style='font-weight:normal;'>頻度: <b style='font-size:18px;'>{int(result_he['ARF'].values[0])}</b></p>", unsafe_allow_html=True)
-            st.markdown(f"<p style='font-weight:normal;'>使用教科書数: <b style='font-size:18px;'>{int(result_he['使用教科書数'].values[0])}</b></p>", unsafe_allow_html=True)
-        else:
-            st.warning("入力された単語は英語コミュニケーションのリストに含まれていません。")
-
-        # 高等学校論理表現
-        result_hl = df_hl[df_hl["単語"] == lemma_word]
-        if not result_hl.empty:
-            st.markdown("---")
-            st.subheader("高等学校論理表現の使用状況")
-            st.markdown(f"<p style='font-weight:normal;'>語彙レベル: <b style='font-size:18px;'>{result_hl['語彙レベル'].values[0]}</b></p>", unsafe_allow_html=True)
-            st.markdown(f"<p style='font-weight:normal;'>頻度: <b style='font-size:18px;'>{int(result_hl['ARF'].values[0])}</b></p>", unsafe_allow_html=True)
-            st.markdown(f"<p style='font-weight:normal;'>使用教科書数: <b style='font-size:18px;'>{int(result_hl['使用教科書数'].values[0])}</b></p>", unsafe_allow_html=True)
-        else:
-            st.warning("入力された単語は論理表現のリストに含まれていません。")
+        # 各カテゴリーのデータ処理
+        for category, df in dataframes.items():
+            if df.empty:
+                continue
+            result = df[df["単語"] == lemma_word]
+            if not result.empty:
+                st.subheader(f"{category}の教科書の使用状況")
+                for col in ["頻度", "語彙レベル", "使用教科書数", "ARF"]:
+                    if col in result.columns:
+                        st.markdown(f"<p style='font-weight:normal;'>{col}: <b style='font-size:18px;'>{result[col].values[0]}</b></p>", unsafe_allow_html=True)
+                st.markdown("---")
+            else:
+                st.warning(f"入力された単語は{category}のリストに含まれていません。")
     else:
-        st.warning("ここに結果が表示されます")
+        st.info("単語を入力すると、ここに結果が表示されます。")

@@ -1,6 +1,18 @@
 import streamlit as st
 import pandas as pd
 import spacy
+import requests
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
+from nltk.stem import WordNetLemmatizer
+import nltk
+
+# 必要なデータをダウンロード
+nltk.download('wordnet')
+nltk.download('omw-1.4')
+
+# レンマタイザの初期化
+lemmatizer = WordNetLemmatizer()
 
 # SpaCyの英語モデルをロード
 @st.cache_data
@@ -15,6 +27,13 @@ CSV_URLS = {
     "中学校": "http://hirosakieigo.weblike.jp/satoclass/material/webapp/vocabdata_J.csv",
     "高等学校英語コミュニケーション": "http://hirosakieigo.weblike.jp/satoclass/material/webapp/vocabdata_HE.csv",
     "高等学校論理表現": "http://hirosakieigo.weblike.jp/satoclass/material/webapp/vocabdata_HL.csv",
+}
+
+TEXT_URLS = {
+    "小学校": "http://hirosakieigo.weblike.jp/appdvlp/txtbk/ES.txt",
+    "中学校": "http://hirosakieigo.weblike.jp/appdvlp/txtbk/JHS.txt",
+    "高等学校英語コミュニケーション": "http://hirosakieigo.weblike.jp/appdvlp/txtbk/EC.txt",
+    "高等学校論理表現": "http://hirosakieigo.weblike.jp/appdvlp/txtbk/LE.txt",
 }
 
 # データをロードする関数
@@ -32,7 +51,8 @@ dataframes = {key: load_data(url) for key, url in CSV_URLS.items()}
 st.title("TeachLex Scope")
 st.markdown("""<p style="font-size:16px;">小学校から高等学校の英語の教科書の使用状況をお知らせします。</p>""", unsafe_allow_html=True)
 
-col1, col2 = st.columns([1, 2])
+# 3カラムのレイアウト設定
+col1, col2, col3 = st.columns([1, 2, 2])
 
 with col1:
     st.markdown("### 単語を検索")
@@ -63,3 +83,40 @@ with col2:
                 st.warning(f"入力された単語は{category}のリストに含まれていません。")
     else:
         st.info("単語を入力すると、ここに結果が表示されます。")
+
+# ワードクラウドの生成と表示
+with col3:
+    if word:
+        st.markdown("### ワードクラウド")
+        for category, text_url in TEXT_URLS.items():
+            response = requests.get(text_url)
+            if response.status_code == 200:
+                text = response.text
+            else:
+                st.error(f"エラー: {category} のテキストデータを取得できませんでした。")
+                continue
+
+            # テキストを単語に分割して原形に変換
+            words = [lemmatizer.lemmatize(word.lower()) for word in text.split()]
+            context_words = []
+            for idx, w in enumerate(words):
+                if w == lemma_word:
+                    # 前後3語を取得（範囲外の場合を考慮）
+                    start = max(0, idx - 3)
+                    end = min(len(words), idx + 4)
+                    context_words.extend(words[start:idx] + words[idx+1:end])
+
+            # 周辺語をスペースで連結してテキスト化
+            context_text = " ".join(context_words)
+
+            # context_text が空の場合の処理
+            if not context_text:
+                st.warning(f"'{word}' に関連する語が見つかりませんでした（{category}）。")
+                continue
+
+            # ワードクラウドを生成
+            word_cloud = WordCloud(width=300, height=300, background_color='white', max_words=200).generate(context_text)
+
+            # ワードクラウドを表示
+            st.markdown(f"#### {category}")
+            st.image(word_cloud.to_array(), use_column_width=True)

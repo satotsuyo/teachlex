@@ -113,7 +113,7 @@ if word:
                         context_words.extend(words[start:idx] + words[idx+1:end])
                 context_text = " ".join(context_words)
                 if context_text:
-                    st.markdown(f"<p style='font-size:16px; font-weight:bold;'>{category}のワードクラウド</p>", unsafe_allow_html=True)
+                    st.markdown(f"<p style='font-size:16px; font-weight:bold;'>{category}教科書のワードクラウド</p>", unsafe_allow_html=True)
                     word_cloud = WordCloud(width=400, height=200, background_color='white', max_words=200).generate(context_text)
                     st.image(word_cloud.to_array(), use_container_width=True)
                 else:

@@ -119,4 +119,4 @@ with col3:
 
             # ワードクラウドを表示
             st.markdown(f"#### {category}")
-            st.image(word_cloud.to_array(), use_column_width=True)
+            st.image(word_cloud.to_array(), use_container_width=True)
